@@ -35,7 +35,7 @@ interface FinanceState {
   settings: Settings
   lastDeletedExpense: Expense | null
 
-  startNewMonth: () => void
+  startNewMonth: (startDate?: string) => void
   archiveCurrentMonth: () => void
 
   addExpense: (e: Omit<Expense, 'id' | 'budgetMonthId'>) => void
@@ -80,10 +80,10 @@ export const useFinanceStore = create<FinanceState>()(
       settings: DEFAULT_SETTINGS,
       lastDeletedExpense: null,
 
-      startNewMonth: () => {
+      startNewMonth: (startDate?: string) => {
         const { currentMonth, months, expenses, settings } = get()
         const newMonthId = id()
-        const todayStr = today()
+        const todayStr = startDate ?? today()
 
         // Archive current month if exists
         const updatedMonths = currentMonth
