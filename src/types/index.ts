@@ -14,6 +14,7 @@ export interface Expense {
   notes?: string
   budgetMonthId: string
   type: TransactionType
+  isFixed?: boolean
 }
 
 export interface FixedExpense {

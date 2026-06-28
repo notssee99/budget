@@ -238,6 +238,7 @@ export const useFinanceStore = create<FinanceState>()(
           date: todayStr,
           budgetMonthId: currentMonth?.id ?? fe.budgetMonthId,
           type: 'expense',
+          isFixed: true,
         }
 
         set({

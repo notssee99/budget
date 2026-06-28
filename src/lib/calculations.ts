@@ -95,7 +95,7 @@ export function getAllWeekSummaries(
 
   const totalWeeks = Math.ceil((differenceInDays(end, start) + 1) / 7);
   const monthExpenses = expenses.filter(
-    (e) => e.budgetMonthId === currentMonth.id && e.type === 'expense',
+    (e) => e.budgetMonthId === currentMonth.id && e.type === 'expense' && !e.isFixed,
   );
   const baseWeeklyBudget = currentMonth.weeklyBudget;
 
