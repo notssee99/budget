@@ -103,7 +103,7 @@ export const useFinanceStore = create<FinanceState>()((set, get) => ({
   },
 
   startNewMonth: (startDate?: string) => {
-    const { currentMonth, months, expenses, settings } = get()
+    const { currentMonth, months, expenses, fixedExpenses, settings } = get()
     const userId = getUserId()
     const newMonthId = id()
     const todayStr = startDate ?? today()
@@ -132,11 +132,14 @@ export const useFinanceStore = create<FinanceState>()((set, get) => ({
       type: 'income',
     }
 
-    const newFixedExpenses: FixedExpense[] = DEFAULT_FIXED_EXPENSES.map(fe => ({
+    // Carry over current fixed expenses (with their latest amounts/names) into the new month
+    const baseFixed = fixedExpenses.length > 0 ? fixedExpenses : DEFAULT_FIXED_EXPENSES
+    const newFixedExpenses: FixedExpense[] = baseFixed.map(fe => ({
       ...fe,
       id: id(),
       budgetMonthId: newMonthId,
       isPaid: false,
+      paidDate: undefined,
     }))
 
     set({
