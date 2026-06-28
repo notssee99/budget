@@ -119,3 +119,22 @@ export interface ChartDataPoint {
   date?: string
   category?: Category
 }
+
+export interface SharedContribution {
+  id: string
+  userId: string
+  userName: string
+  amount: number
+  description: string
+  date: string
+}
+
+export interface SharedSavingsGoal {
+  id: string
+  name: string
+  icon: string
+  targetAmount: number
+  description?: string
+  createdAt: string
+  contributions: SharedContribution[]
+}

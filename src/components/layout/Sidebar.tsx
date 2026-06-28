@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   Home, Receipt, Target, BarChart2,
-  Calendar, FileText, Lightbulb, Settings,
+  Calendar, FileText, Lightbulb, Settings, Users,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PrivacyToggle } from '@/components/shared/PrivacyToggle'
@@ -16,6 +16,7 @@ const NAV = [
   { label: 'Dashboard',  icon: Home,       href: '/' },
   { label: 'Expenses',   icon: Receipt,    href: '/expenses' },
   { label: 'Goals',      icon: Target,     href: '/goals' },
+  { label: 'Bashkë',    icon: Users,      href: '/shared' },
   { label: 'Statistics', icon: BarChart2,  href: '/statistics' },
   { label: 'Calendar',   icon: Calendar,   href: '/calendar' },
   { label: 'Reports',    icon: FileText,   href: '/reports' },

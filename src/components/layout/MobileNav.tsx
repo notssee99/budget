@@ -2,15 +2,15 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Receipt, Target, BarChart2, Settings } from 'lucide-react'
+import { Home, Receipt, Target, BarChart2, Users } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const NAV = [
   { label: 'Dashboard', icon: Home,      href: '/' },
   { label: 'Expenses',  icon: Receipt,   href: '/expenses' },
   { label: 'Goals',     icon: Target,    href: '/goals' },
+  { label: 'Bashkë',   icon: Users,     href: '/shared' },
   { label: 'Stats',     icon: BarChart2, href: '/statistics' },
-  { label: 'Settings',  icon: Settings,  href: '/settings' },
 ]
 
 export function MobileNav() {
