@@ -58,7 +58,7 @@ function FeRow({
 }
 
 export function FixedExpensesView() {
-  const { fixedExpenses, addFixedExpense, updateFixedExpense, deleteFixedExpense, markFixedExpensePaid, unmarkFixedExpensePaid, resetFixedExpensesForNewMonth, currentMonth, settings } = useFinanceStore()
+  const { fixedExpenses, addFixedExpense, updateFixedExpense, deleteFixedExpense, markFixedExpensePaid, unmarkFixedExpensePaid, settings } = useFinanceStore()
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<FixedExpense | null>(null)
 
@@ -124,14 +124,7 @@ export function FixedExpensesView() {
           </h2>
         </div>
         {mine.length === 0 ? (
-          <div className="py-4 flex flex-col items-center gap-3 text-center">
-            <p className="text-sm text-muted-foreground">Nuk ka shpenzime fikse</p>
-            {currentMonth && (
-              <Button size="sm" variant="outline" onClick={() => resetFixedExpensesForNewMonth(currentMonth.id)}>
-                Restauro shpenzimet bazë
-              </Button>
-            )}
-          </div>
+          <p className="text-sm text-muted-foreground py-4 text-center">Nuk ka shpenzime fikse</p>
         ) : (
           <div className="space-y-2">
             {mine.sort((a, b) => a.dueDay - b.dueDay).map(fe => (
