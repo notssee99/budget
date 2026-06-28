@@ -325,6 +325,12 @@ export const useFinanceStore = create<FinanceState>()((set, get) => ({
     set(state => {
       const newSettings = { ...state.settings, ...updates }
       if (userId) db.saveSettings(userId, newSettings)
+      // If salary changed, also update current month's income
+      if (updates.salary !== undefined && state.currentMonth) {
+        const updatedMonth = { ...state.currentMonth, income: updates.salary }
+        if (userId) db.updateMonth(userId, updatedMonth)
+        return { settings: newSettings, currentMonth: updatedMonth }
+      }
       return { settings: newSettings }
     })
   },
