@@ -15,7 +15,7 @@ export function LoginScreen() {
   const [shaking, setShaking] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const authLogin = useAuthStore(s => s.login)
-  const reloadForUser = useFinanceStore(s => s.reloadForUser)
+  const loadForUser = useFinanceStore(s => s.loadForUser)
 
   function selectUser(user: User) {
     setSelectedUser(user)
@@ -35,7 +35,7 @@ export function LoginScreen() {
     if (!selectedUser) return
     const ok = authLogin(selectedUser.id, pin)
     if (ok) {
-      await reloadForUser(selectedUser.id)
+      await loadForUser(selectedUser.id)
     } else {
       setError('PIN i gabuar. Provo sërish.')
       setPin('')

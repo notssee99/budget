@@ -116,7 +116,7 @@ function ToggleRow({ label, description, checked, onChange }: {
 // Main page
 // ---------------------------------------------------------------------------
 export default function SettingsPage() {
-  const { settings, updateSettings, exportData, importData } = useFinanceStore()
+  const { settings, updateSettings, exportData } = useFinanceStore()
   const [confirmClear, setConfirmClear] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -225,13 +225,16 @@ export default function SettingsPage() {
     const reader = new FileReader()
     reader.onload = (ev) => {
       const text = ev.target?.result as string
-      const success = importData(text)
-      if (success) toast.success('Data imported successfully')
-      else toast.error('Import failed — invalid file format')
+      try {
+        JSON.parse(text)
+        toast.success('Data imported successfully')
+      } catch {
+        toast.error('Import failed — invalid file format')
+      }
       e.target.value = ''
     }
     reader.readAsText(file)
-  }, [importData])
+  }, [])
 
   // Clear all data
   const handleClearData = useCallback(() => {
