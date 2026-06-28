@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { Plus } from 'lucide-react'
 import { useFinanceStore } from '@/store/financeStore'
 import { useSharedStore } from '@/store/sharedStore'
+import { useAccountsStore } from '@/store/accountsStore'
 import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
 import { Toaster } from 'sonner'
@@ -17,6 +18,7 @@ import { LoginScreen } from '@/components/auth'
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { settings, loadForUser, isLoaded } = useFinanceStore()
   const { loadShared } = useSharedStore()
+  const { loadAccounts } = useAccountsStore()
   const { user, isLoading, init } = useAuthStore()
   const [quickAddOpen, setQuickAddOpen] = useState(false)
 
@@ -27,6 +29,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     if (user) {
       loadForUser(user.id)
       loadShared()
+      loadAccounts(user.id)
     }
   }, [user?.id])
 
@@ -53,6 +56,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'shared_contributions' }, () => {
         loadShared()
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bank_accounts' }, () => {
+        loadAccounts(user.id)
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'account_transactions' }, () => {
+        loadAccounts(user.id)
       })
       .subscribe()
 
