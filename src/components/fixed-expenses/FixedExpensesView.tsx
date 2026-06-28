@@ -5,8 +5,6 @@ import { Plus, Pencil, Trash2, CheckCircle2, Circle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useFinanceStore } from '@/store/financeStore'
-import { useAuthStore } from '@/store/authStore'
-import { DEFAULT_FIXED_EXPENSES } from '@/constants'
 import { formatCurrency } from '@/lib/calculations'
 import { FixedExpenseForm } from './FixedExpenseForm'
 import type { FixedExpense } from '@/types'
@@ -60,68 +58,33 @@ function FeRow({
 }
 
 export function FixedExpensesView() {
-  const { fixedExpenses, addFixedExpense, updateFixedExpense, deleteFixedExpense, markFixedExpensePaid, unmarkFixedExpensePaid, currentMonth, settings } = useFinanceStore()
-  const { user } = useAuthStore()
+  const { fixedExpenses, addFixedExpense, updateFixedExpense, deleteFixedExpense, markFixedExpensePaid, unmarkFixedExpensePaid, settings } = useFinanceStore()
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<FixedExpense | null>(null)
 
-  const realMine = fixedExpenses.filter(fe => !fe.assignedTo || fe.assignedTo === 'festoni')
+  const mine = fixedExpenses.filter(fe => !fe.assignedTo || fe.assignedTo === 'festoni')
   const odetas = fixedExpenses.filter(fe => fe.assignedTo === 'odeta')
-
-  // Show defaults for Festoni when no real data exists yet
-  const defaultsAsFixed: FixedExpense[] = DEFAULT_FIXED_EXPENSES
-    .filter(fe => fe.assignedTo === 'festoni' || !fe.assignedTo)
-    .map((fe, i) => ({
-      ...fe,
-      id: `default-${i}`,
-      budgetMonthId: currentMonth?.id ?? '',
-      isPaid: false,
-      assignedTo: 'festoni' as const,
-    }))
-  const mine = realMine.length > 0 ? realMine : (user?.id === 'festoni' ? defaultsAsFixed : [])
-
-  const isDefault = (id: string) => id.startsWith('default-')
-
-  function ensureSaved(fe: FixedExpense) {
-    if (isDefault(fe.id)) {
-      // Save the default to Supabase first
-      addFixedExpense({ name: fe.name, amount: fe.amount, dueDay: fe.dueDay, category: fe.category, assignedTo: fe.assignedTo })
-    }
-  }
 
   const totalMine = mine.reduce((s, fe) => s + fe.amount, 0)
   const totalOdeta = odetas.reduce((s, fe) => s + fe.amount, 0)
   const totalAll = totalMine + totalOdeta
 
   function handleEdit(fe: FixedExpense) {
-    if (isDefault(fe.id)) {
-      // For defaults, open form pre-filled so user can save it properly
-      setEditing({ ...fe, id: '' })
-    } else {
-      setEditing(fe)
-    }
+    setEditing(fe)
     setFormOpen(true)
   }
 
   function handleDelete(id: string) {
-    if (isDefault(id)) return
     if (confirm('Fshi shpenzimin?')) deleteFixedExpense(id)
   }
 
   function handleTogglePaid(id: string, paid: boolean) {
-    if (isDefault(id)) {
-      const fe = mine.find(f => f.id === id)
-      if (fe && paid) {
-        addFixedExpense({ name: fe.name, amount: fe.amount, dueDay: fe.dueDay, category: fe.category, assignedTo: fe.assignedTo })
-      }
-      return
-    }
     if (paid) markFixedExpensePaid(id)
     else unmarkFixedExpensePaid(id)
   }
 
   function handleSave(data: Omit<FixedExpense, 'id' | 'budgetMonthId' | 'isPaid' | 'paidDate'>) {
-    if (editing && editing.id) {
+    if (editing) {
       updateFixedExpense(editing.id, data)
     } else {
       addFixedExpense(data)
@@ -152,26 +115,18 @@ export function FixedExpensesView() {
 
       {/* Festoni's section */}
       <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold flex items-center gap-2">
-            👨 Të Miat
-            <Badge variant="secondary" className="text-xs">
-              {formatCurrency(totalMine, settings.currencySymbol)}
-            </Badge>
-          </h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-base font-semibold">👨 Të Miat</h2>
+          <Badge variant="secondary" className="text-xs">
+            {formatCurrency(totalMine, settings.currencySymbol)}
+          </Badge>
         </div>
         {mine.length === 0 ? (
           <p className="text-sm text-muted-foreground py-4 text-center">Nuk ka shpenzime fikse</p>
         ) : (
           <div className="space-y-2">
             {mine.sort((a, b) => a.dueDay - b.dueDay).map(fe => (
-              <FeRow
-                key={fe.id}
-                fe={fe}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onTogglePaid={handleTogglePaid}
-              />
+              <FeRow key={fe.id} fe={fe} onEdit={handleEdit} onDelete={handleDelete} onTogglePaid={handleTogglePaid} />
             ))}
           </div>
         )}
@@ -179,26 +134,18 @@ export function FixedExpensesView() {
 
       {/* Odeta's section */}
       <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold flex items-center gap-2">
-            👩 Të Odetës
-            <Badge variant="secondary" className="text-xs">
-              {formatCurrency(totalOdeta, settings.currencySymbol)}
-            </Badge>
-          </h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-base font-semibold">👩 Të Odetës</h2>
+          <Badge variant="secondary" className="text-xs">
+            {formatCurrency(totalOdeta, settings.currencySymbol)}
+          </Badge>
         </div>
         {odetas.length === 0 ? (
           <p className="text-sm text-muted-foreground py-4 text-center">Nuk ka shpenzime fikse</p>
         ) : (
           <div className="space-y-2">
             {odetas.sort((a, b) => a.dueDay - b.dueDay).map(fe => (
-              <FeRow
-                key={fe.id}
-                fe={fe}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onTogglePaid={handleTogglePaid}
-              />
+              <FeRow key={fe.id} fe={fe} onEdit={handleEdit} onDelete={handleDelete} onTogglePaid={handleTogglePaid} />
             ))}
           </div>
         )}
