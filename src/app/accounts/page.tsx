@@ -1,5 +1,12 @@
+'use client'
+
+import { AppLayout } from '@/components/layout'
 import { AccountsView } from '@/components/accounts'
 
 export default function AccountsPage() {
-  return <AccountsView />
+  return (
+    <AppLayout>
+      <AccountsView />
+    </AppLayout>
+  )
 }

@@ -18,13 +18,19 @@ export const DEFAULT_SETTINGS: Settings = {
   },
 }
 
-export const DEFAULT_FIXED_EXPENSES = [
-  { name: 'Rent', amount: 200, dueDay: 1, category: 'bills' as Category },
-  { name: 'Bank Payment', amount: 350, dueDay: 1, category: 'bills' as Category },
-  { name: 'Loan / Bank Fee', amount: 60, dueDay: 1, category: 'bills' as Category },
-  { name: 'Phone', amount: 10, dueDay: 1, category: 'subscriptions' as Category },
-  { name: 'Spotify', amount: 10, dueDay: 1, category: 'subscriptions' as Category },
-  { name: 'ChatGPT', amount: 17, dueDay: 1, category: 'subscriptions' as Category },
+export const DEFAULT_FIXED_EXPENSES: Array<{
+  name: string
+  amount: number
+  dueDay: number
+  category: Category
+  assignedTo?: 'festoni' | 'odeta'
+}> = [
+  { name: 'Qiras (Qera)', amount: 200, dueDay: 1, category: 'bills', assignedTo: 'festoni' },
+  { name: 'Pagesa Bankare', amount: 350, dueDay: 1, category: 'bills', assignedTo: 'festoni' },
+  { name: 'Kredi / Tarifë Bankare', amount: 60, dueDay: 1, category: 'bills', assignedTo: 'festoni' },
+  { name: 'Telefon', amount: 10, dueDay: 1, category: 'subscriptions', assignedTo: 'festoni' },
+  { name: 'Spotify', amount: 10, dueDay: 1, category: 'subscriptions', assignedTo: 'festoni' },
+  { name: 'ChatGPT', amount: 17, dueDay: 1, category: 'subscriptions', assignedTo: 'festoni' },
 ]
 
 export const CATEGORY_LABELS: Record<Category, string> = {
