@@ -2,15 +2,15 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Receipt, Landmark, Settings, Users } from 'lucide-react'
+import { Home, Receipt, Landmark, Users, CalendarClock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const NAV = [
-  { label: 'Dashboard', icon: Home,     href: '/' },
-  { label: 'Expenses',  icon: Receipt,  href: '/expenses' },
-  { label: 'Kursimet',  icon: Landmark, href: '/accounts' },
-  { label: 'Bashkë',   icon: Users,    href: '/shared' },
-  { label: 'Settings',  icon: Settings, href: '/settings' },
+  { label: 'Dashboard', icon: Home,          href: '/' },
+  { label: 'Expenses',  icon: Receipt,       href: '/expenses' },
+  { label: 'Fikse',     icon: CalendarClock, href: '/fixed' },
+  { label: 'Kursimet',  icon: Landmark,      href: '/accounts' },
+  { label: 'Bashkë',   icon: Users,         href: '/shared' },
 ]
 
 export function MobileNav() {
