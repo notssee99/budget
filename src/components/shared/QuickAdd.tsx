@@ -1,236 +1,205 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
-import { ArrowRight, Loader2 } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { X, Plus, TrendingUp, TrendingDown, PiggyBank } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { format } from 'date-fns'
 import { useFinanceStore } from '@/store/financeStore'
-import { parseQuickInput } from '@/lib/quickParse'
 import { CATEGORY_CONFIG } from '@/lib/categoryDetection'
-import { formatCurrency } from '@/lib/calculations'
 import { cn } from '@/lib/utils'
+import type { Category, TransactionType } from '@/types'
 
 interface QuickAddProps {
   onClose?: () => void
 }
 
-type Status = 'idle' | 'success' | 'error'
+const CATEGORIES = Object.entries(CATEGORY_CONFIG)
+  .filter(([key]) => !['salary'].includes(key))
+  .map(([key, val]) => ({ key: key as Category, ...val }))
+
+const TYPES: { value: TransactionType; label: string; icon: React.ReactNode; color: string }[] = [
+  { value: 'expense', label: 'Shpenzim', icon: <TrendingDown className="w-4 h-4" />, color: 'bg-rose-500 text-white' },
+  { value: 'income',  label: 'Të ardhura', icon: <TrendingUp className="w-4 h-4" />, color: 'bg-emerald-500 text-white' },
+  { value: 'savings', label: 'Kursim', icon: <PiggyBank className="w-4 h-4" />, color: 'bg-indigo-500 text-white' },
+]
 
 export function QuickAdd({ onClose }: QuickAddProps) {
-  const [value, setValue] = useState('')
-  const [status, setStatus] = useState<Status>('idle')
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
   const { addExpense, settings } = useFinanceStore()
+  const [type, setType] = useState<TransactionType>('expense')
+  const [amount, setAmount] = useState('')
+  const [description, setDescription] = useState('')
+  const [category, setCategory] = useState<Category>('other')
+  const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'))
+  const [success, setSuccess] = useState(false)
 
-  const parsed = value.trim() ? parseQuickInput(value) : null
-  const hasContent = value.trim().length > 0
-  const isInvalid = hasContent && !parsed
-
+  // Auto-set category based on type
   useEffect(() => {
-    inputRef.current?.focus()
-  }, [])
+    if (type === 'savings') setCategory('savings')
+    else if (type === 'income') setCategory('salary')
+    else setCategory('other')
+  }, [type])
 
-  const handleSubmit = useCallback(async () => {
-    if (!parsed || isSubmitting) return
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    const num = parseFloat(amount)
+    if (!num || num <= 0 || !description.trim()) return
 
-    setIsSubmitting(true)
-    // Minimal delay to let state settle, then add
-    await new Promise(r => setTimeout(r, 80))
-
-    addExpense({
-      amount: parsed.amount,
-      description: parsed.description,
-      category: parsed.category,
-      type: parsed.type,
-      date: new Date().toISOString().slice(0, 10),
-    })
-
-    setStatus('success')
-    setIsSubmitting(false)
-    setValue('')
-
+    addExpense({ amount: num, description: description.trim(), category, type, date })
+    setSuccess(true)
     setTimeout(() => {
-      setStatus('idle')
+      setSuccess(false)
+      setAmount('')
+      setDescription('')
       onClose?.()
-    }, 900)
-  }, [parsed, isSubmitting, addExpense, onClose])
-
-  function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      handleSubmit()
-    }
-    if (e.key === 'Escape') {
-      onClose?.()
-    }
+    }, 800)
   }
 
-  const categoryConfig = parsed ? CATEGORY_CONFIG[parsed.category] : null
-  const typeLabel =
-    parsed?.type === 'income'
-      ? 'income'
-      : parsed?.type === 'savings'
-        ? 'savings'
-        : 'expense'
-
   return (
-    <div className="w-full max-w-xl mx-auto">
-      {/* Input row */}
-      <div
-        className={cn(
-          'relative flex items-center gap-2 rounded-2xl px-4 py-2.5',
-          'bg-card border transition-all duration-200',
-          'shadow-sm',
-          isInvalid
-            ? 'border-destructive/50 shadow-destructive/10'
-            : status === 'success'
-              ? 'border-green-500/50 shadow-green-500/10'
-              : 'border-border focus-within:border-primary/50 focus-within:shadow-primary/10',
-          'focus-within:shadow-md',
-        )}
-        style={{
-          background: status === 'success'
-            ? undefined
-            : 'linear-gradient(var(--angle, 0deg), hsl(var(--card)), hsl(var(--card)))',
-        }}
+    <AnimatePresence>
+      <motion.div
+        key="overlay"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+        onClick={e => { if (e.target === e.currentTarget) onClose?.() }}
       >
-        {/* Gradient border shimmer on focus — via outline pseudo-layer */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-300 focus-within:opacity-100"
-          style={{
-            background:
-              'linear-gradient(135deg, hsl(var(--primary)/0.3), hsl(243 90% 75%/0.2), hsl(var(--primary)/0.1))',
-            padding: '1px',
-            mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-            maskComposite: 'exclude',
-            WebkitMaskComposite: 'xor',
-          }}
-        />
+        {/* Backdrop */}
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
-        {/* Category icon — appears when parsed */}
-        <AnimatePresence>
-          {categoryConfig && (
-            <motion.span
-              key={parsed?.category}
-              initial={{ opacity: 0, scale: 0.5, x: -8 }}
-              animate={{ opacity: 1, scale: 1, x: 0 }}
-              exit={{ opacity: 0, scale: 0.5, x: -8 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-              className="flex-shrink-0 text-xl leading-none"
-              role="img"
-              aria-label={categoryConfig.label}
+        {/* Modal */}
+        <motion.div
+          initial={{ opacity: 0, y: 60, scale: 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 40, scale: 0.97 }}
+          transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+          className="relative w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl bg-card border border-border shadow-2xl overflow-hidden z-10"
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-border">
+            <h2 className="text-base font-semibold text-foreground">Transaksion i Ri</h2>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted transition-colors text-muted-foreground"
             >
-              {categoryConfig.icon}
-            </motion.span>
-          )}
-        </AnimatePresence>
+              <X className="w-4 h-4" />
+            </button>
+          </div>
 
-        <input
-          ref={inputRef}
-          type="text"
-          value={value}
-          onChange={e => {
-            setValue(e.target.value)
-            setStatus('idle')
-          }}
-          onKeyDown={handleKeyDown}
-          placeholder='Quick add… e.g. "Coffee 2.5" or "Salary 1734"'
-          className={cn(
-            'flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground',
-            'outline-none border-none ring-0 min-w-0',
-          )}
-          aria-label="Quick add transaction"
-          autoComplete="off"
-          spellCheck={false}
-        />
+          <form onSubmit={handleSubmit} className="px-5 pt-4 pb-6 space-y-4">
 
-        {/* Keyboard hint */}
-        {!hasContent && (
-          <kbd className="hidden sm:inline-flex items-center gap-1 rounded-md border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground font-mono flex-shrink-0">
-            Q
-          </kbd>
-        )}
+            {/* Type tabs */}
+            <div className="grid grid-cols-3 gap-1.5 p-1 bg-muted rounded-xl">
+              {TYPES.map(t => (
+                <button
+                  key={t.value}
+                  type="button"
+                  onClick={() => setType(t.value)}
+                  className={cn(
+                    'flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition-all',
+                    type === t.value
+                      ? t.color + ' shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  {t.icon}
+                  {t.label}
+                </button>
+              ))}
+            </div>
 
-        {/* Submit button */}
-        <AnimatePresence>
-          {hasContent && (
-            <motion.button
-              initial={{ opacity: 0, scale: 0.7 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.7 }}
-              transition={{ duration: 0.12 }}
-              onClick={handleSubmit}
-              disabled={!parsed || isSubmitting}
+            {/* Amount */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Shuma ({settings.currencySymbol})</label>
+              <div className="relative">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-semibold text-muted-foreground">
+                  {settings.currencySymbol}
+                </span>
+                <input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={amount}
+                  onChange={e => setAmount(e.target.value)}
+                  placeholder="0.00"
+                  autoFocus
+                  className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-border bg-background text-sm font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 placeholder:text-muted-foreground/50"
+                />
+              </div>
+            </div>
+
+            {/* Description */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Përshkrimi</label>
+              <input
+                type="text"
+                value={description}
+                onChange={e => setDescription(e.target.value)}
+                placeholder="p.sh. Kafe, Karburanti, Rroga..."
+                className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 placeholder:text-muted-foreground/50"
+              />
+            </div>
+
+            {/* Category */}
+            {type === 'expense' && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">Kategoria</label>
+                <div className="grid grid-cols-5 gap-1.5">
+                  {CATEGORIES.filter(c => !['savings','salary'].includes(c.key)).slice(0, 10).map(c => (
+                    <button
+                      key={c.key}
+                      type="button"
+                      onClick={() => setCategory(c.key)}
+                      title={c.label}
+                      className={cn(
+                        'flex flex-col items-center gap-0.5 rounded-xl py-2 text-lg transition-all border',
+                        category === c.key
+                          ? 'bg-primary/10 border-primary/40 scale-105'
+                          : 'bg-muted/50 border-transparent hover:bg-muted'
+                      )}
+                    >
+                      <span>{c.icon}</span>
+                      <span className="text-[9px] text-muted-foreground leading-none truncate w-full text-center px-1">{c.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Date */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Data</label>
+              <input
+                type="date"
+                value={date}
+                onChange={e => setDate(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+              />
+            </div>
+
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={!amount || !description.trim() || success}
               className={cn(
-                'flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-xl',
-                'transition-all duration-150',
-                parsed && !isSubmitting
-                  ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                  : 'bg-muted text-muted-foreground cursor-not-allowed',
+                'w-full flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold transition-all',
+                success
+                  ? 'bg-emerald-500 text-white'
+                  : 'bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed'
               )}
-              aria-label="Add transaction"
             >
-              {isSubmitting ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              {success ? (
+                '✓ U shtua me sukses!'
               ) : (
-                <ArrowRight className="w-3.5 h-3.5" />
+                <>
+                  <Plus className="w-4 h-4" />
+                  Shto Transaksionin
+                </>
               )}
-            </motion.button>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* Preview / feedback row */}
-      <AnimatePresence mode="wait">
-        {status === 'success' && (
-          <motion.p
-            key="success"
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.15 }}
-            className="mt-2 px-4 text-xs text-green-600 dark:text-green-400 font-medium"
-          >
-            ✓ Added successfully
-          </motion.p>
-        )}
-
-        {status !== 'success' && parsed && (
-          <motion.p
-            key="preview"
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.15 }}
-            className="mt-2 px-4 text-xs text-muted-foreground"
-          >
-            Adding:{' '}
-            <span className="font-medium text-foreground">
-              {categoryConfig?.icon} {parsed.description}
-            </span>
-            {' — '}
-            <span className="font-medium text-foreground" style={{ fontVariantNumeric: 'tabular-nums' }}>
-              {formatCurrency(parsed.amount, settings.currencySymbol, settings.privacyMode)}
-            </span>
-            {' '}
-            <span className="text-muted-foreground">({typeLabel})</span>
-          </motion.p>
-        )}
-
-        {status !== 'success' && isInvalid && (
-          <motion.p
-            key="error"
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.15 }}
-            className="mt-2 px-4 text-xs text-destructive"
-          >
-            Could not parse amount — try "Coffee 3.50" or "45 Fuel"
-          </motion.p>
-        )}
-      </AnimatePresence>
-    </div>
+            </button>
+          </form>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
   )
 }
