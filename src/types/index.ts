@@ -26,6 +26,7 @@ export interface FixedExpense {
   isPaid: boolean
   paidDate?: string
   budgetMonthId: string
+  assignedTo?: 'festoni' | 'odeta'
 }
 
 export interface BudgetMonth {
@@ -138,4 +139,25 @@ export interface SharedSavingsGoal {
   description?: string
   createdAt: string
   contributions: SharedContribution[]
+}
+
+export interface BankAccount {
+  id: string
+  userId: string
+  name: string
+  icon: string
+  balance: number
+  currency?: string
+  notes?: string
+  createdAt: string
+}
+
+export interface AccountTransaction {
+  id: string
+  accountId: string
+  userId: string
+  amount: number
+  description: string
+  date: string
+  type: 'deposit' | 'withdrawal'
 }

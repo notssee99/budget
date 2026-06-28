@@ -68,6 +68,7 @@ function fixedFromRow(r: Record<string, unknown>): FixedExpense {
     isPaid: r.is_paid as boolean,
     paidDate: r.paid_date as string | undefined,
     budgetMonthId: r.budget_month_id as string,
+    assignedTo: r.assigned_to as FixedExpense['assignedTo'],
   }
 }
 
@@ -82,6 +83,7 @@ function fixedToRow(userId: string, fe: FixedExpense) {
     is_paid: fe.isPaid,
     paid_date: fe.paidDate ?? null,
     budget_month_id: fe.budgetMonthId,
+    assigned_to: fe.assignedTo ?? null,
   }
 }
 
@@ -224,6 +226,11 @@ export async function getFixedExpenses(userId: string): Promise<FixedExpense[]> 
   return (data ?? []).map(r => fixedFromRow(r as Record<string, unknown>))
 }
 
+export async function getFixedExpensesAll(): Promise<FixedExpense[]> {
+  const { data } = await supabase.from('fixed_expenses').select('*').in('user_id', ['festoni', 'odeta'])
+  return (data ?? []).map(r => fixedFromRow(r as Record<string, unknown>))
+}
+
 export async function insertFixedExpense(userId: string, fe: FixedExpense): Promise<void> {
   await supabase.from('fixed_expenses').insert(fixedToRow(userId, fe))
 }
@@ -234,6 +241,9 @@ export async function dbUpdateFixedExpense(userId: string, id: string, updates: 
   if (updates.paidDate !== undefined) row.paid_date = updates.paidDate ?? null
   if (updates.amount !== undefined) row.amount = updates.amount
   if (updates.name !== undefined) row.name = updates.name
+  if (updates.dueDay !== undefined) row.due_day = updates.dueDay
+  if (updates.category !== undefined) row.category = updates.category
+  if (updates.assignedTo !== undefined) row.assigned_to = updates.assignedTo ?? null
   await supabase.from('fixed_expenses').update(row).eq('id', id).eq('user_id', userId)
 }
 

@@ -69,7 +69,7 @@ export const useFinanceStore = create<FinanceState>()((set, get) => ({
       const [months, expenses, fixedExpenses, savingsTemplates, settings] = await Promise.all([
         db.getMonths(userId),
         db.getExpenses(userId),
-        db.getFixedExpenses(userId),
+        userId === 'festoni' ? db.getFixedExpensesAll() : db.getFixedExpenses(userId),
         db.getSavingsTemplates(userId),
         db.getSettings(userId),
       ])

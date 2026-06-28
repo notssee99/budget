@@ -4,29 +4,32 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   Home, Receipt, Target, BarChart2,
-  Calendar, FileText, Lightbulb, Settings, Users,
+  Calendar, FileText, Lightbulb, Settings, Users, CreditCard,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PrivacyToggle } from '@/components/shared/PrivacyToggle'
 import { ThemeToggle } from '@/components/shared/ThemeToggle'
 import { useFinanceStore } from '@/store/financeStore'
+import { useAuthStore } from '@/store/authStore'
 import { formatCurrency } from '@/lib/calculations'
 
 const NAV = [
-  { label: 'Dashboard',  icon: Home,       href: '/' },
-  { label: 'Expenses',   icon: Receipt,    href: '/expenses' },
-  { label: 'Goals',      icon: Target,     href: '/goals' },
-  { label: 'Bashkë',    icon: Users,      href: '/shared' },
-  { label: 'Statistics', icon: BarChart2,  href: '/statistics' },
-  { label: 'Calendar',   icon: Calendar,   href: '/calendar' },
-  { label: 'Reports',    icon: FileText,   href: '/reports' },
-  { label: 'Insights',   icon: Lightbulb,  href: '/insights' },
-  { label: 'Settings',   icon: Settings,   href: '/settings' },
+  { label: 'Dashboard',  icon: Home,       href: '/',          festoniOnly: false },
+  { label: 'Expenses',   icon: Receipt,    href: '/expenses',  festoniOnly: false },
+  { label: 'Goals',      icon: Target,     href: '/goals',     festoniOnly: false },
+  { label: 'Bashkë',    icon: Users,      href: '/shared',    festoniOnly: false },
+  { label: 'Shpenzimet Fikse', icon: CreditCard, href: '/fixed', festoniOnly: true },
+  { label: 'Statistics', icon: BarChart2,  href: '/statistics',festoniOnly: false },
+  { label: 'Calendar',   icon: Calendar,   href: '/calendar',  festoniOnly: false },
+  { label: 'Reports',    icon: FileText,   href: '/reports',   festoniOnly: false },
+  { label: 'Insights',   icon: Lightbulb,  href: '/insights',  festoniOnly: false },
+  { label: 'Settings',   icon: Settings,   href: '/settings',  festoniOnly: false },
 ]
 
 export function Sidebar() {
   const pathname = usePathname()
   const { currentMonth, expenses, settings } = useFinanceStore()
+  const { user } = useAuthStore()
 
   const spent = expenses
     .filter(e => e.budgetMonthId === currentMonth?.id && e.type === 'expense')
@@ -48,7 +51,7 @@ export function Sidebar() {
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-0.5">
-        {NAV.map(({ label, icon: Icon, href }) => {
+        {NAV.filter(item => !item.festoniOnly || user?.id === 'festoni').map(({ label, icon: Icon, href }) => {
           const active = href === '/' ? pathname === '/' : pathname.startsWith(href)
           return (
             <Link
