@@ -74,25 +74,11 @@ export const useFinanceStore = create<FinanceState>()((set, get) => ({
         db.getSettings(userId),
       ])
       const currentMonth = months.find(m => m.isActive) ?? null
-
-      // Auto-seed default fixed expenses for Festoni when none exist
-      let finalFixedExpenses = fixedExpenses
-      if (userId === 'festoni' && fixedExpenses.length === 0 && currentMonth) {
-        const seeded = DEFAULT_FIXED_EXPENSES.map(fe => ({
-          ...fe,
-          id: id(),
-          budgetMonthId: currentMonth.id,
-          isPaid: false,
-        }))
-        db.replaceFixedExpenses(userId, seeded)
-        finalFixedExpenses = seeded
-      }
-
       set({
         months: months.filter(m => !m.isActive),
         currentMonth,
         expenses,
-        fixedExpenses: finalFixedExpenses,
+        fixedExpenses,
         savingsTemplates,
         settings: settings ?? DEFAULT_SETTINGS,
         isLoaded: true,

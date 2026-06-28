@@ -5,6 +5,8 @@ import { Plus, Pencil, Trash2, CheckCircle2, Circle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useFinanceStore } from '@/store/financeStore'
+import { useAuthStore } from '@/store/authStore'
+import { DEFAULT_FIXED_EXPENSES } from '@/constants'
 import { formatCurrency } from '@/lib/calculations'
 import { FixedExpenseForm } from './FixedExpenseForm'
 import type { FixedExpense } from '@/types'
@@ -58,33 +60,68 @@ function FeRow({
 }
 
 export function FixedExpensesView() {
-  const { fixedExpenses, addFixedExpense, updateFixedExpense, deleteFixedExpense, markFixedExpensePaid, unmarkFixedExpensePaid, settings } = useFinanceStore()
+  const { fixedExpenses, addFixedExpense, updateFixedExpense, deleteFixedExpense, markFixedExpensePaid, unmarkFixedExpensePaid, currentMonth, settings } = useFinanceStore()
+  const { user } = useAuthStore()
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<FixedExpense | null>(null)
 
-  const mine = fixedExpenses.filter(fe => !fe.assignedTo || fe.assignedTo === 'festoni')
+  const realMine = fixedExpenses.filter(fe => !fe.assignedTo || fe.assignedTo === 'festoni')
   const odetas = fixedExpenses.filter(fe => fe.assignedTo === 'odeta')
+
+  // Show defaults for Festoni when no real data exists yet
+  const defaultsAsFixed: FixedExpense[] = DEFAULT_FIXED_EXPENSES
+    .filter(fe => fe.assignedTo === 'festoni' || !fe.assignedTo)
+    .map((fe, i) => ({
+      ...fe,
+      id: `default-${i}`,
+      budgetMonthId: currentMonth?.id ?? '',
+      isPaid: false,
+      assignedTo: 'festoni' as const,
+    }))
+  const mine = realMine.length > 0 ? realMine : (user?.id === 'festoni' ? defaultsAsFixed : [])
+
+  const isDefault = (id: string) => id.startsWith('default-')
+
+  function ensureSaved(fe: FixedExpense) {
+    if (isDefault(fe.id)) {
+      // Save the default to Supabase first
+      addFixedExpense({ name: fe.name, amount: fe.amount, dueDay: fe.dueDay, category: fe.category, assignedTo: fe.assignedTo })
+    }
+  }
 
   const totalMine = mine.reduce((s, fe) => s + fe.amount, 0)
   const totalOdeta = odetas.reduce((s, fe) => s + fe.amount, 0)
   const totalAll = totalMine + totalOdeta
 
   function handleEdit(fe: FixedExpense) {
-    setEditing(fe)
+    if (isDefault(fe.id)) {
+      // For defaults, open form pre-filled so user can save it properly
+      setEditing({ ...fe, id: '' })
+    } else {
+      setEditing(fe)
+    }
     setFormOpen(true)
   }
 
   function handleDelete(id: string) {
+    if (isDefault(id)) return
     if (confirm('Fshi shpenzimin?')) deleteFixedExpense(id)
   }
 
   function handleTogglePaid(id: string, paid: boolean) {
+    if (isDefault(id)) {
+      const fe = mine.find(f => f.id === id)
+      if (fe && paid) {
+        addFixedExpense({ name: fe.name, amount: fe.amount, dueDay: fe.dueDay, category: fe.category, assignedTo: fe.assignedTo })
+      }
+      return
+    }
     if (paid) markFixedExpensePaid(id)
     else unmarkFixedExpensePaid(id)
   }
 
   function handleSave(data: Omit<FixedExpense, 'id' | 'budgetMonthId' | 'isPaid' | 'paidDate'>) {
-    if (editing) {
+    if (editing && editing.id) {
       updateFixedExpense(editing.id, data)
     } else {
       addFixedExpense(data)
