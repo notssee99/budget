@@ -42,9 +42,10 @@ export function Header({ onQuickAdd }: HeaderProps) {
       <div className="flex min-w-0 items-center gap-3">
         <h1 className="truncate text-base font-semibold text-foreground">{title}</h1>
         {monthLabel && (
-          <span className="hidden sm:flex items-center gap-1 text-xs font-medium text-primary bg-primary/10 rounded-md px-2 py-1">
+          <span className="flex items-center gap-1 text-xs font-medium text-primary bg-primary/10 rounded-md px-2 py-1">
             <CalendarDays size={12} />
-            {monthLabel}
+            <span className="hidden sm:inline">{monthLabel}</span>
+            <span className="sm:hidden">{format(parseISO(currentMonth!.startDate), 'MMM yyyy')}</span>
           </span>
         )}
         {!monthLabel && (

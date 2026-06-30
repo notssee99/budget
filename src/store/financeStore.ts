@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { format } from 'date-fns'
+import { format, parseISO, startOfMonth, addMonths, getDate } from 'date-fns'
 import type { Expense, FixedExpense, BudgetMonth, SavingsTemplate, Settings } from '@/types'
 import { DEFAULT_SETTINGS, DEFAULT_FIXED_EXPENSES } from '@/constants'
 import * as db from '@/lib/db'
@@ -97,6 +97,19 @@ export const useFinanceStore = create<FinanceState>()((set, get) => ({
         settings: settings ?? DEFAULT_SETTINGS,
         isLoaded: true,
       })
+
+      // Auto-advance: if there's a stale active month from a previous calendar month
+      // and today is >= 4th of the new month, archive it and start a new one automatically
+      if (currentMonth) {
+        const todayDate = new Date()
+        const monthStart = parseISO(currentMonth.startDate)
+        const nextCalendarMonth = startOfMonth(addMonths(monthStart, 1))
+        const isStaleMonth = todayDate >= nextCalendarMonth && getDate(todayDate) >= 4
+        if (isStaleMonth) {
+          // Trigger auto-advance after state settles
+          setTimeout(() => get().startNewMonth(), 50)
+        }
+      }
     } catch {
       set({ isLoaded: true })
     }
@@ -132,14 +145,16 @@ export const useFinanceStore = create<FinanceState>()((set, get) => ({
       type: 'income',
     }
 
-    // Carry over current fixed expenses (with their latest amounts/names) into the new month
-    const newFixedExpenses: FixedExpense[] = fixedExpenses.map(fe => ({
-      ...fe,
-      id: id(),
-      budgetMonthId: newMonthId,
-      isPaid: false,
-      paidDate: undefined,
-    }))
+    // Only carry over paid fixed expenses — unpaid ones stay in the archived month
+    const newFixedExpenses: FixedExpense[] = fixedExpenses
+      .filter(fe => fe.isPaid)
+      .map(fe => ({
+        ...fe,
+        id: id(),
+        budgetMonthId: newMonthId,
+        isPaid: false,
+        paidDate: undefined,
+      }))
 
     set({
       currentMonth: newMonth,

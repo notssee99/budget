@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { CalendarX } from 'lucide-react'
 import { toast } from 'sonner'
+import { differenceInDays, startOfMonth, addMonths, parseISO, format } from 'date-fns'
 import { useFinanceStore } from '@/store/financeStore'
 import { useAuthStore } from '@/store/authStore'
 import { computeDashboard } from '@/lib/calculations'
@@ -34,6 +35,17 @@ export default function DashboardGrid() {
   const [endMonthOpen, setEndMonthOpen] = useState(false)
   const isFestoni = user?.id === 'festoni'
 
+  // Allow closing only within 3 days of the next calendar month
+  const canEndMonth = useMemo(() => {
+    const today = new Date()
+    const nextMonthStart = startOfMonth(addMonths(today, 1))
+    return differenceInDays(nextMonthStart, today) <= 3
+  }, [])
+
+  const currentMonthLabel = currentMonth
+    ? format(parseISO(currentMonth.startDate), 'MMMM yyyy')
+    : null
+
   const stats = useMemo(
     () => computeDashboard({ currentMonth, expenses, fixedExpenses, settings, userId: user?.id }),
     [currentMonth, expenses, fixedExpenses, settings, user?.id]
@@ -62,17 +74,31 @@ export default function DashboardGrid() {
         initial="hidden"
         animate="show"
       >
-        {/* End Month button */}
-        <motion.div variants={item} className="flex justify-end">
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2 text-muted-foreground"
-            onClick={() => setEndMonthOpen(true)}
-          >
-            <CalendarX size={15} />
-            Mbyll Muajin
-          </Button>
+        {/* Month label (mobile) + End Month button */}
+        <motion.div variants={item} className="flex items-center justify-between">
+          {currentMonthLabel && (
+            <span className="sm:hidden text-sm font-semibold text-foreground">
+              📅 {currentMonthLabel}
+            </span>
+          )}
+          <div className="ml-auto">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 text-muted-foreground"
+              onClick={() => setEndMonthOpen(true)}
+              disabled={!canEndMonth}
+              title={canEndMonth ? undefined : 'Muaji mund të mbyllet vetëm 3 ditë para muajit të ri'}
+            >
+              <CalendarX size={15} />
+              Mbyll Muajin
+            </Button>
+            {!canEndMonth && (
+              <p className="text-[10px] text-muted-foreground mt-1 text-right">
+                E disponueshme 3 ditë para muajit të ri
+              </p>
+            )}
+          </div>
         </motion.div>
 
         {/* Row 1: 4 key numbers */}
@@ -99,8 +125,8 @@ export default function DashboardGrid() {
       <ConfirmDialog
         open={endMonthOpen}
         onOpenChange={setEndMonthOpen}
-        title="Mbyll Muajin?"
-        description="Muaji aktual do të arkivohet dhe do të fillojë një muaj i ri i pastër. Ky veprim nuk mund të kthehet."
+        title={`Mbyll ${currentMonthLabel ?? 'Muajin'}?`}
+        description={`Muaji ${currentMonthLabel ?? 'aktual'} do të arkivohet dhe do të fillojë muaji i ri. Shpenzimet fikse të papaguara nuk do të transferohen. Ky veprim nuk mund të kthehet.`}
         onConfirm={handleEndMonth}
         confirmLabel="Mbyll Muajin"
         variant="destructive"
