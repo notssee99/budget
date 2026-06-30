@@ -133,8 +133,7 @@ export const useFinanceStore = create<FinanceState>()((set, get) => ({
     }
 
     // Carry over current fixed expenses (with their latest amounts/names) into the new month
-    const baseFixed = fixedExpenses.length > 0 ? fixedExpenses : DEFAULT_FIXED_EXPENSES
-    const newFixedExpenses: FixedExpense[] = baseFixed.map(fe => ({
+    const newFixedExpenses: FixedExpense[] = fixedExpenses.map(fe => ({
       ...fe,
       id: id(),
       budgetMonthId: newMonthId,

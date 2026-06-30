@@ -35,8 +35,8 @@ export default function DashboardGrid() {
   const isFestoni = user?.id === 'festoni'
 
   const stats = useMemo(
-    () => computeDashboard({ currentMonth, expenses, fixedExpenses, settings }),
-    [currentMonth, expenses, fixedExpenses, settings]
+    () => computeDashboard({ currentMonth, expenses, fixedExpenses, settings, userId: user?.id }),
+    [currentMonth, expenses, fixedExpenses, settings, user?.id]
   )
 
   if (!currentMonth) {

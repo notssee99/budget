@@ -168,8 +168,9 @@ export function computeDashboard(params: {
   expenses: Expense[];
   fixedExpenses: FixedExpense[];
   settings: Settings;
+  userId?: string;
 }): DashboardStats {
-  const { currentMonth, expenses, fixedExpenses, settings } = params;
+  const { currentMonth, expenses, fixedExpenses, settings, userId } = params;
 
   const zero: DashboardStats = {
     currentBalance: 0,
@@ -197,7 +198,10 @@ export function computeDashboard(params: {
   );
 
   const monthlyIncome = currentMonth.income;
-  const totalFixedExpenses = fixedExpenses.reduce((s, f) => s + f.amount, 0);
+  const myFixedExpenses = userId
+    ? fixedExpenses.filter(f => !f.assignedTo || f.assignedTo === userId)
+    : fixedExpenses;
+  const totalFixedExpenses = myFixedExpenses.reduce((s, f) => s + f.amount, 0);
 
   const currentSavings = monthExpenses
     .filter((e) => e.type === 'savings')
